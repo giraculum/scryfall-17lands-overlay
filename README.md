@@ -4,29 +4,33 @@ Overlays rankings from 17Lands data onto Scryfall searches.
 ## Getting Started
 Install the **Violentmonkey** extension on your browser, which allows user scripts to be run in-browser. Open the Violentmonkey dashboard, and copy **overlay.js** as a new script. Hit Save, and ensure the script is active.
 
-To hide draft grades, open the Violentmonkey extension while on Scryfall, and hit the toggle to disable the script.
+To **hide** draft grades, open the Violentmonkey extension while on Scryfall, and hit the toggle to disable the script.
 
-(This extension was tested on Firefox/Chrome, so other browsers may or may not work. Alternatives to Violentmonkey also may or may not work.)
+**Grades are updated over time** once data is available. No need to update the script except for eventual new features.
+
+*(This extension was tested on Firefox/Chrome, so other browsers may or may not work. Alternatives to Violentmonkey also may or may not work.)*
+
 ## Notes
 
-- Grades are calculated from MTGArena Premier Draft games, sourced from 17Lands. Grades may differ slightly from ones on the 17Lands website, though typically only by a single step (e.g. B vs. B+). 17Lands provides public data sets for the purpose of tools like this, but that data is not always as up-to-date as the website, even for past sets.
+- Grades are calculated from MTGArena Premier Draft games recorded by 17Lands, using their grading methodology: A card that **doesn't increase/decrease a deck's win rate** has a grade of **C**.
 
-- A card may also have a sub-grade for particular color archetypes in the format. The card must have been significantly played in that archetype (played over 500 times, and contributing over 2% of that card's total play), and it must have performed significantly better/worse in the archetype (Differing from the main grade with at least one grade in-between.)
+- Grades **may differ slightly** from ones on the 17Lands website, though typically only by a single step (e.g. B vs. B+). This is because the 17Lands public datasets releases lag behind the internal data used for the website.
 
-- This script's grades are not live. When new set data is available, the script must be manually updated. It's not worth coding anything more complicated...
+- A card **may have sub-grades** for color archetypes in the format. This is only shown when the card performs significantly better/worse in that archetype (it must *skip* a grade e.g. B- to B+), and only if it appeared frequently enough (must account for *over 2%* of the times the card was seen.) A card may have a score for an off-color archetype as a splash.
 
+- **A card seen <500 times has a grade of "?"**. It's either a rare Special Guest card, or just a *really* bad card in draft.
 
 ## Scryfall Search help
 
-#### Only sets that entered Standard ("Expansion"/"Premier" sets) have grades, going back to the start of 2022 with Kamigawa: Neon Dynasty. Commander sets, etc. don't have grades.
-- To show only expansion sets, use the search term:  st:expansion
-- To additionally show Foundations cards, use the search term:  (st:core or st:expansion)
-- To filter out sets preceding the data, use the search term:  year>2021
+#### Only main Standard-hitting sets are graded, going back to 2022 with Kamigawa: Neon Dynasty. Sets that never hit Standard aren't graded.
+- *To show only expansion sets, use:  **st:expansion***
+- *To also show Foundations cards, use:  **(st:core or st:expansion)***
+- *To filter out ungraded sets, use:  **year>2021***
 
-#### For cards printed in multiple sets, each printing receives its own grade. Grades may differ due to being different draft environments. By default, Scryfall only shows the most version of a card in a search.
-- To show all prints, use the search term:  unique:prints
+#### For cards printed in multiple sets, each printing receives its own grade. Grades may differ across sets due to different draft environments.
+- *To show all prints, use:  **unique:prints***
 
-#### Only the most typical printing of a card in each set receive a grade overlay. Foils, alternate arts, etc. don't get a grade. Draftable cards from bonus sheets (e.g. Mystical Archive cards) DO receive grades.
-- To filter out non-standard frames, use the search term:  is:booster *(though this also filters out Mystical Archive, etc!)*
+#### Only the most typical "draft" version of a card receives a grade overlay. Draft cards from bonus sheets (e.g. Mystical Archive cards) DO receive grades however.
+- *To filter out non-standard frames/versions, use:  **is:booster** (this also filters out Mystical Archive!)*
 
 If you have a better way of filtering for exactly "draft" cards, let me know.
