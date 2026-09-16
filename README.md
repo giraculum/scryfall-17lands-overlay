@@ -4,7 +4,7 @@ Overlays rankings from 17Lands data onto Scryfall searches.
 ## Getting Started
 Install the **Violentmonkey** extension on your browser, which allows user scripts to be run in-browser. Open the Violentmonkey dashboard, and copy **overlay.js** as a new script. Hit Save, and ensure the script is active.
 
-To hide draft grades, open the TamperMonkey extension while on Scryfall, and hit the toggle to disable the script.
+To hide draft grades, open the Violentmonkey extension while on Scryfall, and hit the toggle to disable the script.
 
 (This extension was tested on Firefox/Chrome, so other browsers may or may not work. Alternatives to Violentmonkey also may or may not work.)
 ## Notes
