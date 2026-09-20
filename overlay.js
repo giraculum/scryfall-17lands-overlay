@@ -25,7 +25,7 @@ const SHOW_WINRATES = true; //displayed under main grade
 const SHOW_TEMPLATES = true; //displayed at bottom of card if present
 const SHOW_SIDEBAR = false; //sidebar of all current templates, for easy editing
 
-const ALLOW_TEMPLATE_EDITS = true;/*
+const ALLOW_TEMPLATE_EDITS = false;/*
 drag and drop templates from anywhere onto cards, then choose Cut to Clipboard on top right
 paste into localTemplateListing at the bottom for persistence
 templates are separated by spaces if multiple are on the same printing
