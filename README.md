@@ -1,5 +1,5 @@
 # scryfall-17lands-overlay
-Overlays rankings from 17Lands data onto Scryfall searches.
+Overlays grades and win rates from 17Lands data onto Scryfall searches. Provides quick searches under cards to view cards of the same "template" from other sets.
 
 ## Getting Started
 Install the **Violentmonkey** extension on your browser, which allows user scripts to be run in-browser. Open the Violentmonkey dashboard, and copy **overlay.js** as a new script. Hit Save, ensure the script is active, then start searching on Scryfall. To stop displaying grades, re-open the dashboard and disable the script.
