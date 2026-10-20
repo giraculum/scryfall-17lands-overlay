@@ -2,7 +2,7 @@
 // @name        Scryfall 17Lands Overlay
 // @namespace   Violentmonkey Scripts
 // @icon
-// @version     0.4.1
+// @version     0.5.0
 //
 // @match       *://scryfall.com/*
 // @grant       GM_addStyle
@@ -95,9 +95,9 @@ const _STATS = function(){
       margin-top: -7px;
       margin-bottom: -9px;
       display: var(--S17L-grade-hide, inherit);
-    }
-    .S17L-main-grade:first-child {
-      padding-top: 4px;
+      &:first-child {
+        padding-top: 4px;
+      }
     }
 
     .S17L-main-winrate {
@@ -132,22 +132,21 @@ const _STATS = function(){
       flex-flow: row nowrap;
       justify-content: space-between;
       align-items: center;
-    }
-
-    .S17L-sub-maj {
-      display: var(--S17L-maj-hide, flex);
-      order: -1;
-    }
-
-    .S17L-sub-mana {
-      padding-top: 2px;
-      padding-left: 3px;
-    }
-
-    .S17L-sub-grade {
-      font-size: 18px;
-      padding-top: 1.5px;
-      padding-right: 3px;
+      & .S17L-sub-mana {
+        padding-top: 2px;
+        padding-left: 3px;
+      }
+      & .S17L-sub-grade {
+        font-size: 18px;
+        padding-top: 1.5px;
+        padding-right: 3px;
+      }
+      &[S17L-grade="Maj."] {
+        display: var(--S17L-maj-hide, flex);
+        & .S17L-sub-grade {
+          font-size: 12px;
+        }
+      }
     }
 
     [S17L-grade="A+"] {color: #ff5174}
@@ -165,7 +164,7 @@ const _STATS = function(){
     [S17L-grade="F"]  {color: #43c5e0}
     [S17L-grade="?"]  {color: #9b67e5}
     [S17L-grade="!"]  {color: #ff0000}
-    [S17L-grade="Maj."]  {color:lightgray; font-size: 12px}
+    [S17L-grade="Maj."] {color:lightgray;}
 
     .S17L-checklist-grade {
       display: var(--S17L-grade-hide, table-cell);
@@ -252,7 +251,7 @@ const _STATS = function(){
     set grade(newValue) {
       let oldValue = this._grade;
       this._grade = newValue;
-      this.gradebox.setAttribute("S17L-grade", newValue);
+      this.box.setAttribute("S17L-grade", newValue);
       this.gradebox.textContent = newValue.replace("-","–").padEnd(2," "); //Figure space
     }
 
@@ -293,7 +292,7 @@ const _STATS = function(){
       if (stats.pp>=50 && deck!="all") {
         let maj = new SubOverlay(ctrl.subRegion, "Maj.", colors);
         ctrl.allSubs["maj"] = maj;
-        maj.box.classList.add("S17L-sub-maj");
+        maj.box.classList.add("S17L-sub-entry-maj");
       }
       if (deck!=SPOTLIGHT && stats.g!=cardStatsPerDeck[SPOTLIGHT]?.g && (stats.sig>=1.5 || stats.pp>=50)) {
         ctrl.allSubs[deck] = new SubOverlay(ctrl.subRegion, stats.g, colors);
@@ -432,55 +431,100 @@ const _TAGS = function(){
       font-weight: bolder;
       cursor: help;
       display: var(--S17L-tag-hide, inline);
+
+      &[S17L-cuttable=true] {
+        background: #444444 !important;
+      }
+      &[S17L-color='W'] {color: lemonchiffon; border-color: tan; background: #000000;}
+      &[S17L-color='U'] {color: lightcyan; border-color: dodgerblue; background: #000000;}
+      &[S17L-color='B'] {color: thistle; border-color: darkmagenta; background: #000000;}
+      &[S17L-color='R'] {color: pink; border-color: brown; background: #000000;}
+      &[S17L-color='G'] {color: #D0FFD0; border-color: darkgreen; background: #000000;}
+      &[S17L-color='C'] {color: gainsboro; border-color: gray; background: #000000;}
+      &[S17L-color='A'] {color: gainsboro; border-color: gray; background: #000000;}
+      &[S17L-color='M'] {color: bisque; border-color: goldenrod; background: #000000;}
+      &[S17L-color='X'] {color: bisque; border-color: goldenrod; background: #000000;}
+      &[S17L-category='removal'] {background: radial-gradient(circle at left, #990000 0px, #480000 15px, black 15px);}
+      &[S17L-category='semiremoval'] {background: radial-gradient(circle at left, #996600 0px, #3A3300 15px, black 15px);}
     }
 
-    .S17L-tag[S17L-cuttable=true] {
-      background: #444444 !important;
-    }
-
-    .S17L-container-sidebar {
+    .S17L-region-sidebar {
       position: fixed;
+      bottom: 0;
+      left: 0;
+      display: var(--S17L-sb-hide, flex);
+      height: 100%;
+      width: 100%;
+      pointer-events: none;
+
+    }
+
+    .S17L-sidebar-taglist {
+      pointer-events: auto;
+      flex: 0 0 auto;
+      position: relative;
       width: 140px;
       height: 100%;
       bottom: 0;
       left: 0;
-      border: 5px solid #999;
       background: rgba(1,1,1,.2);
-      resize: horizontal;
-      max-width: 300px;
       overflow-y: scroll;
       overflow-x: clip;
-      display: var(--S17L-sb-hide, flex);
+
+      display: flex;
       flex-flow: column nowrap;
-      flex: 1 1;
       align-items: flex-start;
       row-gap: 2px;
+      align-content: flex-start;
+      justify-content: flex-start;
+      gap: -6px;
+      & .S17L-tag {
+        font-size: 12px;
+        min-width: 40px;
+        margin-right: 40px;
+        /*
+        &::after {
+          content: attr(s17l-tagcount);
+          font-size: 10px;
+          font-style: italic;
+        }
+        */
+      }
     }
 
-    .S17L-container-sidebar .S17L-tag {
-      font-size: 12px;
-      min-width: 40px;
-      display: inherit;
+
+    .S17L-sidebar-empty {
+      position: relative;
+      padding: 12px;
+      overflow: hidden;
+      display: grid;
+      align-items: center;
+      flex: 1 1 auto;
     }
 
-    /*
-    .S17L-container-sidebar .S17L-tag::after {
-      content: attr(s17l-tagcount);
-      font-size: 10px;
-      font-style: italic;
-    }*/
-
-    .S17L-tag[S17L-color=W] {color: lemonchiffon; border-color: tan; background: #000000;}
-    .S17L-tag[S17L-color=U] {color: lightcyan; border-color: dodgerblue; background: #000000;}
-    .S17L-tag[S17L-color=B] {color: thistle; border-color: darkmagenta; background: #000000;}
-    .S17L-tag[S17L-color=R] {color: pink; border-color: brown; background: #000000;}
-    .S17L-tag[S17L-color=G] {color: #D0FFD0; border-color: darkgreen; background: #000000;}
-    .S17L-tag[S17L-color=C] {color: gainsboro; border-color: gray; background: #000000;}
-    .S17L-tag[S17L-color=A] {color: gainsboro; border-color: gray; background: #000000;}
-    .S17L-tag[S17L-color=M] {color: bisque; border-color: goldenrod; background: #000000;}
-    .S17L-tag[S17L-color=X] {color: bisque; border-color: goldenrod; background: #000000;}
-    .S17L-tag[S17L-category=removal] {background: radial-gradient(circle at left, #990000 0px, #480000 15px, black 15px);}
-    .S17L-tag[S17L-category=semiremoval] {background: radial-gradient(circle at left, #996600 0px, #3A3300 15px, black 15px);}
+    .S17L-sidebar-handle {
+      pointer-events: auto;
+      flex: 0 0 auto;
+      background: #444857;
+      height: 100%;
+      width: 6px;
+      background: #999;
+      cursor: col-resize;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+      user-select: none;
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 3px;
+        height: 15px;
+        border-inline: 1px solid #fff;
+      }
+    }
 
   `);
 
@@ -681,9 +725,14 @@ const _TAGS = function(){
 
 
   function addTagSidebar() {
-    let sidebar = GM_addElement(document.body, "aside", {
-      class: "S17L-container-sidebar",
+    let container = GM_addElement(document.body, "div", {class: "S17L-region-sidebar"});
+    let sidebar = GM_addElement(container, "div", {
+      class: "S17L-sidebar-taglist"
     });
+    let handle = GM_addElement(container, "div", {
+      class:"S17L-sidebar-handle"
+    });
+    var biggestTagWidth = 0;
     let allSources = (SHOW_CYCLES_FULL ? [DATA.tags, DATA.cycles] : [DATA.tags]);
     for (let src of allSources) {
       for (let [tagcode,myData] of Object.entries(src.definitions)) {
@@ -693,18 +742,23 @@ const _TAGS = function(){
           let url = `https://scryfall.com/search?q=${encodeURIComponent(myData.query??"")?.replace(/%20/g, "+")}&order=released`;
           let search = GM_addElement(tag, "a", {textContent: "🔎", href: url, style:'user-drag: none; user-select: none'});
         }
+        let currWidth = tag.getBoundingClientRect().width;
+        biggestTagWidth = (currWidth>biggestTagWidth) ? currWidth : biggestTagWidth;
       }
     }
 
 
-    let width = GM_getValue("S17L-sidebar-width", null);
+    var width = GM_getValue("S17L-sidebar-width", null);
+    width = Math.min(width, biggestTagWidth+30);
     if (width) {
-      sidebar.style = `width: ${width}px;`;
+      //sidebar.style = `width: ${width}px;`;
+      sidebar.style.width = `${width}px`;
     }
+    sidebar.style["max-width"] = `${biggestTagWidth+30}px`;
     let rsz = new ResizeObserver((entries)=>{
       for (let entry of entries) {
         let width = entry.contentRect.width;
-        GM_setValue("S17L-sidebar-width", width+10);
+        GM_setValue("S17L-sidebar-width", width);
       }
     });
     rsz.observe(sidebar);
@@ -717,6 +771,59 @@ const _TAGS = function(){
       GM_setValue('S17L-sidebar-scroll', ev.target.scrollTop);
       pause = true;
     });
+
+
+    addResizer(sidebar, handle);
+  }
+
+  function addResizer(elem, handle) {
+    var moveX = elem.getBoundingClientRect().width + handle.getBoundingClientRect().width / 2;
+
+    var drag = false;
+    var unregisterDrag = null;
+    function dragListener(e) {
+      if (!drag) {return;}
+      if(e.buttons%2 != 1) {unregisterDrag(); return;}
+      e.preventDefault();
+      elem.style.width = e.x - handle.getBoundingClientRect().width / 2 + "px";
+    }
+    function dragReleaser(e) {
+      unregisterDrag();
+    }
+    unregisterDrag = ()=>{
+      drag=false;
+      document.body.removeEventListener("mousemove", dragListener);
+      document.body.removeEventListener("mouseup", dragReleaser);
+    }
+    handle.addEventListener("mousedown", function(e) {
+      if (e.button !== 0) {return;}
+      drag = true;
+      moveX = e.x;
+      document.body.addEventListener("mousemove", dragListener);
+      document.body.addEventListener("mouseup", dragReleaser);
+    });
+    /*
+    var touch = false;
+    var unregisterTouch = null;
+    function touchListener(e) {
+      if (!drag) {return;}
+      if (e.targetTouches.length == 0) {unregisterTouch(); return;}
+      e.preventDefault();
+      elem.style.width = e.targetTouches[0].screenX - handle.getBoundingClientRect().width / 2 + "px";
+    }
+    function touchReleaser(e) {
+      unregisterTouch();
+    }
+    unregisterTouch = ()=>{
+      touch=false;
+      document.body.removeEventListener("touchmove", touchListener);
+      document.body.removeEventListener("touchend", touchReleaser);
+    }
+    handle.addEventListener("touchstart", ()=>{
+      touch=true;
+      document.body.addEventListener("touchmove", touchListener);
+      document.body.addEventListener("touchend", touchReleaser);
+    });*/
   }
 
 
@@ -835,11 +942,11 @@ function main(){
         document.documentElement.style.setProperty(prop, checked?valueOn:valueOff);
       }
     }
-    function buildCB(parent, label, prop, action) {
+    function buildCB(parent, label, prop, action, help) {
       let asc = GM_addElement(parent, "label", {class: "advanced-search-checkbox"});
       let initChecked = GM_getValue(prop) ?? true;
       let cb = GM_addElement(asc, "input", {type: "checkbox", style: "margin: 0px"});
-      let lb = GM_addElement(asc, "span", {class: "header-link", textContent: label});
+      let lb = GM_addElement(asc, "span", {class: "header-link", textContent: label, title: help??""});
       cb.checked = initChecked;
       if (action) {
         action(prop, initChecked);
@@ -847,12 +954,12 @@ function main(){
       }
       return cb;
     }
-    buildCB(header, "Grade", "--S17L-grade-hide", toggler("initial", "none"));
-    buildCB(header, "Winrate", "--S17L-wr-hide", toggler("initial", "none"));
-    buildCB(header, "Subgrades", "--S17L-sub-hide", toggler("initial", "none"));
-    buildCB(header, "Deck Majority", "--S17L-maj-hide", toggler("initial", "none"));
-    buildCB(header, "Draft Tags", "--S17L-tag-hide", toggler("initial", "none"));
-    buildCB(header, "Sidebar", "--S17L-sb-hide", toggler("initial", "none"));
+    buildCB(header, "Grade", "--S17L-grade-hide", toggler("initial", "none"), "Ranks performance. C+ and above sees win rate increase, C- and lower sees win rate decreases");
+    buildCB(header, "Winrate", "--S17L-wr-hide", toggler("initial", "none"), "Game-in-Hand Win Rate. Average win rate among games where the card was drawn");
+    buildCB(header, "Subgrades", "--S17L-sub-hide", toggler("initial", "none"), "Individual grades for deck colors where card did noticeably better");
+    buildCB(header, "Deck Majority", "--S17L-maj-hide", toggler("initial", "none"), "Deck colors that contributed over 50% of the card's appearances, if one exists");
+    buildCB(header, "Draft Tags", "--S17L-tag-hide", toggler("initial", "none"), "Link to similar cards from previous sets");
+    buildCB(header, "Sidebar", "--S17L-sb-hide", toggler("initial", "none"), "Drag and Drop to add custom tags");
   }
   addCheckboxes(header);
 
@@ -960,42 +1067,28 @@ function main(){
   }
   addDeckSelector(header);
 
-
   STATS.performSort();
   TAGS.performTagControls();
 };
 
 
-
-localTagListing = {
-  //"fra/1": "ex"
-
+const localTagDefinitions = {
 
 }
 
-//cosmetic features:
-//category: body|removal|semiremoval|trick|resource  (sorts tags)
-//color: w|u|b|r|g|c|m  (purely cosmetic)
-//query is used for magnifying glass in sidebar
-localTagDefinitions = {
-  /*
-  "ex": {
-    "display": "Example",
-    "color": "U",
-    "category": "body",
-    "query": "is:permanent (st:expansion r<r)",
-    "help": "Help text",
-  },
-  */
-}
-let localCardStats = {
+const localTagListing = {
 
 }
 
-let localCycleDefinitions = {
+const localCardStats = {
 
 }
-let localCycleListing = {
+
+const localCycleDefinitions = {
+
+}
+
+const localCycleListing = {
 
 }
 
