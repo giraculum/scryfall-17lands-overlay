@@ -2,7 +2,7 @@
 // @name        Scryfall 17Lands Overlay
 // @namespace   Violentmonkey Scripts
 // @icon
-// @version     0.4.0
+// @version     0.4.1
 //
 // @match       *://scryfall.com/*
 // @grant       GM_addStyle
@@ -15,6 +15,9 @@
 // @resource    resCardStats https://giraculum.github.io/cardstats.json
 // @resource    resTemplates https://giraculum.github.io/templates.json
 // @resource    resCycles https://giraculum.github.io/cycles.json
+//
+// @homepageURL https://github.com/giraculum/scryfall-17lands-overlay
+// @downloadURL https://raw.githubusercontent.com/giraculum/scryfall-17lands-overlay/refs/heads/main/overlay.js
 //
 // @author      Giraculum
 // @description Overlays rankings from 17Lands data onto Scryfall searches
@@ -202,7 +205,7 @@ const _STATS = function(){
   }
 
 
-  let allCardStats = JSON.parse(GM_getResourceText("resCardStats"));
+  let allCardStats = {...JSON.parse(GM_getResourceText("resCardStats")), ...localCardStats};
 
 
   class MainOverlay {
@@ -966,7 +969,7 @@ function main(){
 
 localTagListing = {
   //"fra/1": "ex"
-  
+
 
 }
 
@@ -984,6 +987,9 @@ localTagDefinitions = {
     "help": "Help text",
   },
   */
+}
+let localCardStats = {
+
 }
 
 let localCycleDefinitions = {
