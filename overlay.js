@@ -2,7 +2,7 @@
 // @name        Scryfall 17Lands Overlay
 // @namespace   Violentmonkey Scripts
 // @icon
-// @version     0.5.0
+// @version     1.0.0
 //
 // @match       *://scryfall.com/*
 // @grant       GM_addStyle
