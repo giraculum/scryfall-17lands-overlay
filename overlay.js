@@ -2,7 +2,7 @@
 // @name        Scryfall 17Lands Overlay
 // @namespace   Violentmonkey Scripts
 // @icon
-// @version     1.0.0
+// @version     1.1.0
 //
 // @match       *://scryfall.com/*
 // @grant       GM_addStyle
@@ -15,6 +15,7 @@
 // @resource    resCardStats https://giraculum.github.io/cardstats.json
 // @resource    resTemplates https://giraculum.github.io/templates.json
 // @resource    resCycles https://giraculum.github.io/cycles.json
+// @resource    resSynergies https://giraculum.github.io/synergies.json
 //
 // @homepageURL https://github.com/giraculum/scryfall-17lands-overlay
 // @downloadURL https://raw.githubusercontent.com/giraculum/scryfall-17lands-overlay/refs/heads/main/overlay.js
@@ -60,6 +61,7 @@ const _STATS = function(){
     }
 
     .S17L-region-art {
+      z-index: 10;
       position: absolute;
       top: 11.1%;
       left: 7.5%;
@@ -75,6 +77,7 @@ const _STATS = function(){
       z-index: 10;
       width: 86px;
       border-bottom-right-radius: 26px;
+
       display: flex;
       flex-flow: column nowrap;
       justify-content: center;
@@ -89,33 +92,31 @@ const _STATS = function(){
     }
 
     .S17L-main-grade {
-      font-weight: bolder;
-      font-size: 48px;
-      text-shadow: 3px 3px #222222;
+      display: var(--S17L-grade-hide, inherit);
       margin-top: -7px;
       margin-bottom: -9px;
-      display: var(--S17L-grade-hide, inherit);
-      &:first-child {
-        padding-top: 4px;
-      }
+      &:first-child {padding-top: 4px;}
+
+      font-size: 48px;
+      font-weight: bolder;
+      text-shadow: 3px 3px #222222;
     }
 
     .S17L-main-winrate {
-      font-size: 12px;
       display: var(--S17L-wr-hide, inherit);
+      font-size: 12px;
     }
 
     .S17L-region-sub {
-      z-index: 10;
       width: 100%;
-      flex-grow: 1; /*for region-art*/
-      overflow: hidden;
       margin-top: 2px;
+      flex-grow: 1; /*for region-art*/
+      flex: 1 1;
 
       display: flex;
       flex-flow: column wrap;
-      flex: 1 1;
       align-items: flex-start;
+      overflow: hidden;
     }
 
     .S17L-sub-entry {
@@ -174,7 +175,7 @@ const _STATS = function(){
       display: var(--S17L-wr-hide, table-cell);
     }
 
-    td.S17L-checklist a {
+    .S17L-checklist-bodylink {
       font-weight: bolder;
       text-align: center;
     }
@@ -282,23 +283,28 @@ const _STATS = function(){
     ctrl.mainRegion = GM_addElement(ctrl.artRegion, "span", {class: "S17L-region-main S17L-overlay-box"});
     ctrl.subRegion = GM_addElement(ctrl.artRegion, "span", {class: "S17L-region-sub"});
     ctrl.main = null;
+    ctrl.maj = null;
     ctrl.allSubs = {};
     let cardStatsPerDeck = allCardStats[cardcode];
-    for(let [deck,stats] of Object.entries(cardStatsPerDeck ?? [])) {
+    if (!cardStatsPerDeck) {
+      ctrl.gridelem?.setAttribute("S17L-graded", false);
+      return;
+    }
+    let statsSpotlight = cardStatsPerDeck[SPOTLIGHT];
+    for(let [deck,stats] of Object.entries(cardStatsPerDeck)) {
       let colors = (deck=="all" ? "c" : deck);
       if (deck==SPOTLIGHT) {
         ctrl.main = new MainOverlay(ctrl.mainRegion, stats.g, stats.wr);
       }
       if (stats.pp>=50 && deck!="all") {
-        let maj = new SubOverlay(ctrl.subRegion, "Maj.", colors);
-        ctrl.allSubs["maj"] = maj;
-        maj.box.classList.add("S17L-sub-entry-maj");
+        ctrl.maj = new SubOverlay(ctrl.subRegion, "Maj.", colors);
+        ctrl.maj.box.classList.add("S17L-sub-entry-maj");
       }
-      if (deck!=SPOTLIGHT && stats.g!=cardStatsPerDeck[SPOTLIGHT]?.g && (stats.sig>=1.5 || stats.pp>=50)) {
+      if (deck!=SPOTLIGHT && stats.g!=statsSpotlight?.g && stats.sig>=1.5) {
         ctrl.allSubs[deck] = new SubOverlay(ctrl.subRegion, stats.g, colors);
       }
     }
-    if (cardStatsPerDeck && !cardStatsPerDeck[SPOTLIGHT]) {
+    if (!statsSpotlight) {
       ctrl.main = new MainOverlay(ctrl.mainRegion, "?", 0);
     }
     ctrl.gridelem?.setAttribute("S17L-graded", !!ctrl.main);
@@ -315,10 +321,11 @@ const _STATS = function(){
     let style = bgcolor ? `background: ${bgcolor} !important` : '';
 
     let wrtd = GM_addElement("td", {
-      class: "S17L-checklist S17L-checklist-winrate",
+      class: "S17L-checklist-winrate",
       style: style
     });
     GM_addElement(wrtd, "a", {
+      class: "S17L-checklist-bodylink",
       tabindex: "-1",
       href: href,
       textContent: wr==="" ? "" : wr.toFixed(2)+"%"
@@ -327,10 +334,11 @@ const _STATS = function(){
     row.insertBefore(wrtd, row.children.item(2));
 
     let grtd = GM_addElement("td", {
-      class: "S17L-checklist S17L-checklist-grade",
+      class: "S17L-checklist-grade",
       style: style
     });
     GM_addElement(grtd, "a", {
+      class: "S17L-checklist-bodylink",
       tabindex: "-1",
       href: href,
       textContent: grade.replace("-","–").padEnd(2," "), //Figure space
@@ -423,7 +431,7 @@ const _TAGS = function(){
 
       padding: 6px;
       border: solid 2px lightgray;
-      background: #000000;
+      background: black;
 
       font-size: 12px;
       text-align: center;
@@ -435,38 +443,39 @@ const _TAGS = function(){
       &[S17L-cuttable=true] {
         background: #444444 !important;
       }
-      &[S17L-color='W'] {color: lemonchiffon; border-color: tan; background: #000000;}
-      &[S17L-color='U'] {color: lightcyan; border-color: dodgerblue; background: #000000;}
-      &[S17L-color='B'] {color: thistle; border-color: darkmagenta; background: #000000;}
-      &[S17L-color='R'] {color: pink; border-color: brown; background: #000000;}
-      &[S17L-color='G'] {color: #D0FFD0; border-color: darkgreen; background: #000000;}
-      &[S17L-color='C'] {color: gainsboro; border-color: gray; background: #000000;}
-      &[S17L-color='A'] {color: gainsboro; border-color: gray; background: #000000;}
-      &[S17L-color='M'] {color: bisque; border-color: goldenrod; background: #000000;}
-      &[S17L-color='X'] {color: bisque; border-color: goldenrod; background: #000000;}
+      &[S17L-color='W'] {color: lemonchiffon; border-color: tan;}
+      &[S17L-color='U'] {color: lightcyan; border-color: dodgerblue;}
+      &[S17L-color='B'] {color: thistle; border-color: darkmagenta;}
+      &[S17L-color='R'] {color: pink; border-color: brown;}
+      &[S17L-color='G'] {color: #D0FFD0; border-color: darkgreen;}
+      &[S17L-color='C'] {color: gainsboro; border-color: gray;}
+      &[S17L-color='A'] {color: gainsboro; border-color: gray;}
+      &[S17L-color='M'] {color: bisque; border-color: goldenrod;}
+      &[S17L-color='X'] {color: bisque; border-color: goldenrod;}
       &[S17L-category='removal'] {background: radial-gradient(circle at left, #990000 0px, #480000 15px, black 15px);}
       &[S17L-category='semiremoval'] {background: radial-gradient(circle at left, #996600 0px, #3A3300 15px, black 15px);}
     }
 
     .S17L-region-sidebar {
+      z-index: 10;
       position: fixed;
-      bottom: 0;
+      top: 0;
       left: 0;
-      display: var(--S17L-sb-hide, flex);
       height: 100%;
       width: 100%;
+      display: var(--S17L-sb-hide, flex);
       pointer-events: none;
-
+      & * {pointer-events: auto;}
     }
 
     .S17L-sidebar-taglist {
-      pointer-events: auto;
-      flex: 0 0 auto;
       position: relative;
-      width: 140px;
-      height: 100%;
       bottom: 0;
       left: 0;
+      width: 140px;
+      height: 100%;
+      flex: 0 0 auto;
+
       background: rgba(1,1,1,.2);
       overflow-y: scroll;
       overflow-x: clip;
@@ -474,10 +483,8 @@ const _TAGS = function(){
       display: flex;
       flex-flow: column nowrap;
       align-items: flex-start;
-      row-gap: 2px;
-      align-content: flex-start;
       justify-content: flex-start;
-      gap: -6px;
+      row-gap: 2px;
       & .S17L-tag {
         font-size: 12px;
         min-width: 40px;
@@ -492,27 +499,15 @@ const _TAGS = function(){
       }
     }
 
-
-    .S17L-sidebar-empty {
-      position: relative;
-      padding: 12px;
-      overflow: hidden;
-      display: grid;
-      align-items: center;
-      flex: 1 1 auto;
-    }
-
     .S17L-sidebar-handle {
-      pointer-events: auto;
-      flex: 0 0 auto;
-      background: #444857;
+      position: relative;
       height: 100%;
       width: 6px;
+      flex: 0 0 auto;
+
       background: #999;
       cursor: col-resize;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 10;
+
       user-select: none;
       &::before {
         content: "";
@@ -531,32 +526,29 @@ const _TAGS = function(){
   if (!SHOW_CYCLES_FULL) {
     GM_addStyle(`
       .S17L-region-tag .S17L-tag[S17L-category=cycle] {
-        padding: 0;
-        border: 2px #604a00;
-        background: #302722;
-        font-size: 18px;
-        min-width: 0px;
+        position: absolute;
+        bottom: 0%;
+        right: -2%;
         height: 27px;
         width: 27px;
+        min-width: 0px;
+
         justify-content: top;
-        position: absolute;
-        right: -2%;
+        padding: 0;
         padding-top: 2px;
-        bottom: 0%;
+        font-size: 18px;
         color: gold;
+        background: #302722;
+        border: 2px #604a00;
       }
     `)
   }
-
 
   let rsTemplates = JSON.parse(GM_getResourceText("resTemplates"));
   let rsCycles = JSON.parse(GM_getResourceText("resCycles"));
   if (!GM_getValue("S17L-temptags")) {
     GM_setValue("S17L-temptags", {});
   }
-  //let allTagDefinitions = {...localTagDefinitions, ...rsTemplates.templateDefinitions};
-  //let permTagListings = {...rsTemplates.templateListing, ...localTagListing}; //without temptags
-  //let allTagListings = {...rsTemplates.templateListing, ...localTagListing, ...GM_getValue("S17L-temptags", {})};
 
   var allTagDefinitions = {};
   class Listing {
@@ -617,7 +609,6 @@ const _TAGS = function(){
     let myData = allTagDefinitions[tagcode];
     if (!myData) {return;}
     let q = `unique:prints+${encodeURIComponent(tagMap[tagcode]?.join(' or ')??"")?.replace(/%20/g, "+")}`;
-    //let q = encodeURIComponent(myData.query??"")?.replace(/%20/g, "+");
     let order = (myData.category=='cycle' ? 'color' : 'released');
 
     let elem = GM_addElement(box, "a", {
@@ -655,7 +646,6 @@ const _TAGS = function(){
 
     let newTag = addTag(region, cardcodetarget, tagcode);
     newTag.setAttribute("S17L-cuttable", true);
-    newTag.classList.add("S17L-tag-cuttable");
     pushTempTags(cardcodetarget, tagcode);
   }
 
@@ -696,7 +686,6 @@ const _TAGS = function(){
         ctrl.allTags[tagcode] = tagObj;
         if (!src.inPerm(cardcode,tagcode)) {
           tagObj.setAttribute("S17L-cuttable", true);
-          tagObj.classList.add("S17L-tag-cuttable");
         }
       }
     }
@@ -751,14 +740,12 @@ const _TAGS = function(){
     var width = GM_getValue("S17L-sidebar-width", null);
     width = Math.min(width, biggestTagWidth+30);
     if (width) {
-      //sidebar.style = `width: ${width}px;`;
       sidebar.style.width = `${width}px`;
     }
     sidebar.style["max-width"] = `${biggestTagWidth+30}px`;
     let rsz = new ResizeObserver((entries)=>{
       for (let entry of entries) {
-        let width = entry.contentRect.width;
-        GM_setValue("S17L-sidebar-width", width);
+        GM_setValue("S17L-sidebar-width", entry.contentRect.width);
       }
     });
     rsz.observe(sidebar);
@@ -802,28 +789,6 @@ const _TAGS = function(){
       document.body.addEventListener("mousemove", dragListener);
       document.body.addEventListener("mouseup", dragReleaser);
     });
-    /*
-    var touch = false;
-    var unregisterTouch = null;
-    function touchListener(e) {
-      if (!drag) {return;}
-      if (e.targetTouches.length == 0) {unregisterTouch(); return;}
-      e.preventDefault();
-      elem.style.width = e.targetTouches[0].screenX - handle.getBoundingClientRect().width / 2 + "px";
-    }
-    function touchReleaser(e) {
-      unregisterTouch();
-    }
-    unregisterTouch = ()=>{
-      touch=false;
-      document.body.removeEventListener("touchmove", touchListener);
-      document.body.removeEventListener("touchend", touchReleaser);
-    }
-    handle.addEventListener("touchstart", ()=>{
-      touch=true;
-      document.body.addEventListener("touchmove", touchListener);
-      document.body.addEventListener("touchend", touchReleaser);
-    });*/
   }
 
 
@@ -850,6 +815,12 @@ const _TAGS = function(){
 
 function main(){
 
+  GM_addStyle(`
+    #S17L-header {
+      height: auto;
+    }
+  `)
+
   function prepChecklist() {
     //CHECKLIST GRADES
     let headerRow = document.querySelector("#js-checklist > thead > tr");
@@ -866,10 +837,10 @@ function main(){
     if (order!="artist") {
       checklistLink = checklistLink?.replace("dir=asc","dir=desc");
     }
-    let wrth = GM_addElement("th",{class: "em4 S17L-checklist S17L-checklist-winrate"});
+    let wrth = GM_addElement("th",{class: "em4 S17L-checklist-winrate"});
     GM_addElement(wrth,"a",{href: checklistLink, textContent: "WR"})
     headerRow.insertBefore(wrth, headerRow.children.item(2));
-    let grth = GM_addElement("th",{class: "em2 S17L-checklist S17L-checklist-grade"});
+    let grth = GM_addElement("th",{class: "em2 S17L-checklist-grade"});
     GM_addElement(grth,"a",{href: checklistLink, textContent: "GR"})
     headerRow.insertBefore(grth, headerRow.children.item(2));
   }
@@ -889,8 +860,144 @@ function main(){
 
 
   function getCardCode(url) {
-    let match = url.match(/card\/([^\/]*\/\d*\w?)/);
-    return match?.[1];
+    return url?.match(/card\/([^\/]*\/\d*\w?)/)?.[1];
+  }
+
+
+  GM_addStyle(`
+    .S17L-region-synergy {
+      position: absolute;
+      /*bottom: 0%;*/
+      top: 75px;
+      left: 0%;
+      height: 16%;
+      width: 100%;
+      display: flex;
+      flex-flow: column nowrap;
+      align-items: center;
+    }
+    .S17L-synergy-entry {
+      z-index: 9000001;
+      left: 0%;
+      top: 0%;
+      width: 86px;
+      height: 20px;
+      border: solid 2px;
+      border-radius: 10px;
+      background: rgb(0,0,0,0.9);
+      padding: 2px;
+
+      font-size: 16px;
+      /*display: var(--S17L-sub-hide, flex);&*/
+      display: flex;
+      flex-flow: row nowrap;
+      justify-content: space-between;
+      align-items: center;
+      & .S17L-synergy-grade {
+        font-size: 18px;
+        padding-top: 1.5px;
+        padding-right: 3px;
+      }
+      & .S17L-synergy-wr {
+        font-size: 12px;
+        padding-top: 2px;
+        padding-left: 3px;
+      }
+      /*S17L-overlay-box*/
+    }
+
+  `)
+
+
+
+  function getCardImage(cardcode) {
+    return document.querySelector(`.card-grid-item-card[S17L-cardcode="${cardcode}"] img`)?.getAttribute("src");
+  }
+
+  let rsSynergies = JSON.parse(GM_getResourceText("resSynergies"));
+  let allSynergies = {...rsSynergies, ...localSynergies};
+  function addTooltip(card) {
+    let cardcode = card.getAttribute("S17L-cardcode");
+
+    if(!cardcode) {return;}
+    let img = card.querySelector("img");
+    //let src = img.getAttribute("src");
+    //let src = getCardImage(cardcode);
+    //let cardcode = card.getAttribute("s17l-cardcode");
+    //console.log(src);
+    //let tooltip = GM_addElement()
+    let tooltipElement = document.getElementById("card-tooltip");
+    card.addEventListener("mouseover", function(e) {
+      let mySynergies = allSynergies[cardcode];
+      if (!mySynergies) {return;}
+      //if (Object.keys(mySynergies).length==0) {return;}
+      tooltipElement.style.display = "flex"; //shows element
+      //tooltipElement.style.left = e.pageX + 50 + "px";
+      //tooltipElement.style.top = e.pageY - 30 + "px";
+      let rect = card.getBoundingClientRect();
+      if (rect.right + 350 > window.innerWidth) {
+        tooltipElement.style.left = "unset";
+        tooltipElement.style.right = (window.innerWidth-rect.left)-4+"px";
+      } else {
+        tooltipElement.style.left = rect.right-4+"px";
+        tooltipElement.style.right = "unset";
+      }
+      tooltipElement.style.top = rect.top-15+"px";
+
+      if (tooltipElement.dataset.cardId == cardcode) {return;}
+      tooltipElement.dataset.cardId = cardcode;
+
+
+      //let ts = []
+      let grid = GM_addElement("div", {
+        style: "display:grid; grid-template-columns: repeat(2, 1fr);"
+      });
+      var i=0;
+      for (let [cardcode2,data] of Object.entries(mySynergies)){
+        let src = getCardImage(cardcode2);
+        if(!src) {continue;}
+        var container = GM_addElement(grid, "div", {"S17L-container":true, style: "width: 100%; height: 100%; position:relative"});
+        var t = GM_addElement(container, "img", {
+          id: "card-tooltip-img-front",
+          class: "card",
+          src: src,
+          style: "position: relative; width: 100%;"
+        });
+        let region = GM_addElement(container, "div", {class: "S17L-region-synergy"});
+        let before = GM_addElement(region, "div", {class: "S17L-synergy-entry"});
+        GM_addElement(before, "div", {class: "S17L-synergy-grade", textContent: data.g, "S17L-grade":data.g});
+        GM_addElement(before, "div", {class: "S17L-synergy-wr", textContent: data.wr+"%", "S17L-grade":data.g});
+        i++;
+        if(i>=4) {break;}
+      }
+      while (tooltipElement.firstChild) {
+        tooltipElement.removeChild(tooltipElement.lastChild);
+      }
+      tooltipElement.appendChild(grid);
+    });
+    card.addEventListener("mouseout", function(e){
+      tooltipElement.style.display = "none";
+    })
+
+    /*
+    card.addEventListener("mouseover", function(e) {
+      if (window.innerWidth < 768) return !1;
+      if ("flex" != this.tooltipElement.style.display && (this.tooltipElement.style.display = "flex"),
+          this.tooltipElement.style.left = e.pageX + 50 + "px",
+          this.tooltipElement.style.top = e.pageY - 30 + "px",
+          this.tooltipElement.dataset.cardId != this.cardId) {
+        if (this.tooltipElement.dataset.cardId = this.cardId, this.imgFrontSrc) {
+          var t = document.createElement("img");
+          t.id = "card-tooltip-img-front", t.className = "card", t.src = this.imgFrontSrc
+        }
+        if (this.imgBackSrc) {
+          var n = document.createElement("img");
+          n.id = "card-tooltip-img-back", n.className = "card", n.src = this.imgBackSrc
+        }
+        for (; this.tooltipElement.firstChild;) this.tooltipElement.removeChild(this.tooltipElement.firstChild);
+        t && this.tooltipElement.appendChild(t), n ? (this.tooltipElement.appendChild(n), this.tooltipElement.className = "two-up") : this.tooltipElement.className = ""
+      }
+    }*/
   }
 
 
@@ -899,9 +1006,26 @@ function main(){
     if (!cardcode) {return;}
     let ctrl = new CardController(card, cardcode, card.parentElement);
     ctrl.gridelem.setAttribute("S17L-cardcode", cardcode);
+    //addTooltip(card);
     return ctrl;
   }
   document.querySelectorAll(".card-grid-item-card").forEach(processCardInGrid);
+  try {
+    if (document.URL.startsWith("https://scryfall.com/sets")
+        && document.querySelector("option[value='grid']")?.getAttribute("selected")=="selected") {
+      GM_addStyle(`
+        #card-tooltip {
+          position: fixed;
+          top: 10px;
+          left: 10px;
+          border: thick solid gold;
+        }
+      `);
+      document.querySelectorAll(".card-grid-item-card").forEach(addTooltip);
+    }
+  } catch(err) {}
+
+
 
 
   function processCardInPage(card) {
@@ -914,7 +1038,6 @@ function main(){
 
   function processCardInChecklist(row) {
     let href = row.firstChild.firstChild.getAttribute("href");
-    if (!href) {return;}
     let cardcode = getCardCode(href);
     if (!cardcode) {return;}
     STATS.performGradingChecklist(row, cardcode, href);
@@ -928,9 +1051,8 @@ function main(){
     let newRibbon = GM_addElement("div", {class: "header"});
     originalRibbon.parentNode.insertBefore(newRibbon, originalRibbon.nextSibling);
     return GM_addElement(newRibbon, "div", {
-      class: "header-control-row",
       id: "S17L-header",
-      style: "flex-flow: row wrap; height: auto"
+      class: "header-control-row" //scryfall class
     });
   }
   let header = addHeader();
@@ -1089,6 +1211,10 @@ const localCycleDefinitions = {
 }
 
 const localCycleListing = {
+
+}
+
+const localSynergies = {
 
 }
 
